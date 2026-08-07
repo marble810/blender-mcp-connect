@@ -20,7 +20,7 @@ jobs:
 
       - name: Assemble extension ZIP
         run: |
-          VERSION="${GITHUB_REF_NAME#connect-v}"
+          export VERSION="${GITHUB_REF_NAME#connect-v}"
           python - <<'PY'
           import os, shutil, tempfile, zipfile, pathlib
           src = "addon/blender_mcp_addon"
