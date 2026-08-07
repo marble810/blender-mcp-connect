@@ -14,7 +14,12 @@ __all__ = (
 
 import io
 import sys
-from typing import IO, Self
+from typing import IO, Any
+
+try:
+    from typing import Self
+except ImportError:  # Python < 3.11
+    Self = Any  # type: ignore[assignment,misc]
 
 
 class _Tee(io.TextIOBase):

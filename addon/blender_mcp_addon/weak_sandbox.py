@@ -23,7 +23,12 @@ __all__ = (
 )
 
 import sys
-from typing import Any, Self
+from typing import Any
+
+try:
+    from typing import Self
+except ImportError:  # Python < 3.11
+    Self = Any  # type: ignore[assignment,misc]
 
 
 def _blocked_exit(*args: object, **kwargs: object) -> None:  # noqa: ARG001
