@@ -569,12 +569,15 @@ PyPI Trusted Publisher 目标：
 - [x] 已确定初始上游基线。
 - [x] 已评审官方架构、安装方式、安全警告、发布与活跃问题。
 - [x] 已选定默认方向：PyPI/`uvx` stdio Server + 动态本地 bridge 发现。
-- [ ] 已实施 Phase 0 下游基础。
-- [ ] 已记录基线测试结果。
-- [ ] 已最终确定 descriptor/bridge 协议。
-- [ ] 已实现动态 Extension。
-- [ ] 已实现 Server 发现。
-- [ ] 已实现可靠性状态机。
-- [ ] 跨平台与真实 Blender 测试通过。
-- [ ] 已配置 PyPI Trusted Publisher。
+- [x] 已实施 Phase 0 下游基础（品牌、GPL、SDK 锁定、Windows stdin 修复）。
+- [x] 已记录基线测试结果（41/41 server 测试；一个上游既有失败）。
+- [x] 已最终确定 descriptor/bridge 协议（`docs/bridge-protocol.md`、schema）。
+- [x] 已实现动态 Extension（端口 0、hello、认证、descriptor 生命周期）。
+- [x] 已实现 Server 发现（扫描/探测/选择、会话亲和、失败关闭）。
+- [x] 已实现可靠性状态机（禁止重放、结果未知）。
+- [x] 跨平台单元/E2E 测试通过（69 个测试，stub-bpy add-on 全链路）。
+- [x] 已添加 CI + 发布工作流；wheel 已构建；`uvx --from <wheel>` 冒烟通过。
+- [x] 已创建并推送 `upstream-main` 镜像分支。
+- [ ] 真实 Blender 5.1+ 冒烟测试（Windows/Linux）——受阻：本机无 5.1+ 二进制。
+- [ ] 已配置 PyPI Trusted Publisher（需要 PyPI 账号操作）。
 - [ ] 已发布 `0.1.0`。
