@@ -101,7 +101,20 @@ class FakeBridge:
         return {"status": "error", "message": "Unknown request type"}
 
     def close(self) -> None:
+        """
+        Stop accepting and join the serve thread.
+
+        On POSIX, closing a listener while another thread blocks in
+        ``accept()`` does not wake it (the thread still holds the fd), so
+        the port keeps accepting connections. ``shutdown()`` wakes the
+        blocked accept; joining then releases the fd for good.
+        """
+        try:
+            self.sock.shutdown(socket.SHUT_RDWR)
+        except OSError:
+            pass
         self.sock.close()
+        self._thread.join(timeout=5)
 
 
 class _DescriptorEnv:

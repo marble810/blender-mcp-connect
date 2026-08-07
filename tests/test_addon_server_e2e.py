@@ -143,7 +143,7 @@ class TestAddonServerE2E(unittest.TestCase):
 
         # Client auto-discovers with no host/port configuration.
         response = self.connection.send_code("result = {'sum': 2 + 2}", strict_json=True)
-        self.assertEqual(response["status"], "ok")
+        self.assertEqual(response["status"], "ok", "response={!r}".format(response))
         self.assertEqual(response["result"], {"sum": 4})
 
     def test_wrong_token_rejected(self) -> None:
