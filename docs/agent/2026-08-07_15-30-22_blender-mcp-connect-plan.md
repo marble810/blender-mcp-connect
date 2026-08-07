@@ -576,6 +576,7 @@ A release is complete only when all of the following are true:
 - [x] Cross-platform unit/E2E tests passing (69 tests, stub-bpy add-on round-trip).
 - [x] CI + release workflows added; wheel built; `uvx --from <wheel>` smoke passed.
 - [x] `upstream-main` mirror branch created and pushed.
-- [ ] Real Blender 5.1+ smoke tests (Windows/Linux) — blocked: no 5.1+ binary locally.
-- [ ] PyPI Trusted Publisher configured (needs PyPI account action).
+- [x] Real Blender 5.1.2 smoke tests (Windows): TestBackgroundServer 40/40; auto-port
+      zero-config discovery executed real bpy code; stale descriptor fails closed.
+- [x] PyPI Trusted Publisher configured (by owner).
 - [ ] `0.1.0` released.

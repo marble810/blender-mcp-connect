@@ -578,6 +578,7 @@ PyPI Trusted Publisher 目标：
 - [x] 跨平台单元/E2E 测试通过（69 个测试，stub-bpy add-on 全链路）。
 - [x] 已添加 CI + 发布工作流；wheel 已构建；`uvx --from <wheel>` 冒烟通过。
 - [x] 已创建并推送 `upstream-main` 镜像分支。
-- [ ] 真实 Blender 5.1+ 冒烟测试（Windows/Linux）——受阻：本机无 5.1+ 二进制。
-- [ ] 已配置 PyPI Trusted Publisher（需要 PyPI 账号操作）。
+- [x] 真实 Blender 5.1.2 冒烟测试（Windows）：TestBackgroundServer 40/40；自动端口
+      零配置发现执行真实 bpy 代码；stale descriptor 失败关闭。
+- [x] 已配置 PyPI Trusted Publisher（由仓库所有者完成）。
 - [ ] 已发布 `0.1.0`。
