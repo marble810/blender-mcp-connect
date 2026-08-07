@@ -1,30 +1,31 @@
 {
   "manifest_version": "0.4",
-  "name": "Blender",
-  "version": "1.0.0",
-  "description": "Natural language interface with the Python API and documentation",
-  "long_description": "Blender MCP offers a natural language interface with Blender's Python API, improving access to documentation, and allowing users to explore and understand complex setups. \n\nAn add-on is required to use the MCP Server, please follow the [instructions](https://lab.blender.org/mcp-server/#addon).",
+  "name": "Blender MCP Connect",
+  "version": "0.1.0",
+  "description": "Natural language interface with the Python API and documentation (unofficial downstream of Blender Lab MCP)",
+  "long_description": "Blender MCP Connect offers a natural language interface with Blender's Python API, improving access to documentation, and allowing users to explore and understand complex setups.\n\nAn add-on is required to use the MCP Server, please follow the instructions in the repository README.",
   "author": {
-    "name": "Blender Lab",
-    "url": "https://www.blender.org/lab/"
+    "name": "marble810",
+    "url": "https://github.com/marble810/blender-mcp-connect"
   },
-  "homepage": "https://www.blender.org/lab/mcp-server/",
-  "support": "https://projects.blender.org/lab/blender_mcp/issues/",
+  "homepage": "https://github.com/marble810/blender-mcp-connect",
+  "support": "https://github.com/marble810/blender-mcp-connect/issues",
   "icon": "blender_icon.png",
   "server": {
     "type": "uv",
     "entry_point": "blmcp/__init__.py",
     "mcp_config": {
-      "command": "uv",
+      "command": "uvx",
       "args": [
-        "run",
-        "blender-mcp"
+        "--from",
+        "blender-mcp-connect==0.1.0",
+        "blender-mcp-connect"
       ]
     }
   },
   "license": "GPL-3.0-or-later",
   "privacy_policies": [
-    "https://www.blender.org/privacy-policy/"
+    "https://github.com/marble810/blender-mcp-connect/blob/main/SECURITY.md"
   ],
   "compatibility": {
     "runtimes": {
@@ -33,6 +34,6 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://projects.blender.org/lab/blender_mcp"
+    "url": "https://github.com/marble810/blender-mcp-connect"
   }
 }

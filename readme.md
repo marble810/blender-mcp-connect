@@ -1,4 +1,8 @@
-# Blender MCP
+# Blender MCP Connect
+
+> **Unofficial community downstream** of [Blender Lab MCP](https://projects.blender.org/lab/blender_mcp).
+> Not affiliated with or endorsed by the Blender Foundation.
+> Upstream baseline: `4309a39646e644261624bfcd2bca669b343b7621`.
 
 ## Overview
 
@@ -7,7 +11,7 @@ It offers a natural language interface with Blender's Python API,
 improving access to documentation, and allowing users to explore
 and understand complex setups.
 
-Read the documentation at [blender.org/lab/mcp-server](https://www.blender.org/lab/mcp-server/)
+Read the upstream documentation at [blender.org/lab/mcp-server](https://www.blender.org/lab/mcp-server/)
 
 ----
 
@@ -20,7 +24,7 @@ necessary. It has two components that communicate over a TCP socket:
 
 The data flow is:
 ```
-MCP Client  ⇐ MCP/stdio ⇒  blender-mcp  ⇐ TCP socket ⇒  Blender Add-on
+MCP Client  ⇐ MCP/stdio ⇒  blender-mcp-connect  ⇐ TCP socket ⇒  Blender Add-on
 ```
 
 

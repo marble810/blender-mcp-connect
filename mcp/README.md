@@ -10,11 +10,38 @@ It supports running arbitrary Python code within Blender. This allows for advanc
 
 ## Installation
 
-The MCP Server can be installed via: `pip install git+https://projects.blender.org/lab/blender_mcp.git#subdirectory=mcp`. It requires an add-on in Blender for this to work.
+The MCP Server is published to PyPI as `blender-mcp-connect` and is
+installed via `uvx` (or `pip install blender-mcp-connect`).
+
+It requires an add-on in Blender for this to work:
 
 ### Add-on
-* Install the Blender Lab [Extensions repository](https://docs.blender.org/manual/en/latest/editors/preferences/extensions.html#repositories): `https://lab.blender.org/`
-* Find the MCP add-on, install and enable it.
+
+* Install the **MCP Connect** Blender Extension from the
+  [GitHub Releases](https://github.com/marble810/blender-mcp-connect/releases)
+  page (**Preferences → Get Extensions → Install from Disk…**).
+* Enable the add-on.
+
+> **Note:** this is an unofficial community downstream of Blender Lab MCP.
+> Do not install both the official Blender Lab MCP add-on and MCP Connect at
+> the same time; they would both try to serve the same bridge role.
+
+### MCP client configuration
+
+```json
+{
+  "mcpServers": {
+    "blender": {
+      "command": "uvx",
+      "args": [
+        "--from",
+        "blender-mcp-connect==0.1.0",
+        "blender-mcp-connect"
+      ]
+    }
+  }
+}
+```
 
 ## Examples
 

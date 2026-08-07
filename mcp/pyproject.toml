@@ -3,18 +3,38 @@ requires = ["setuptools>=68.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "blender-mcp"
-version = "1.0.0"
-description = "MCP server for Blender"
+name = "blender-mcp-connect"
+version = "0.1.0"
+description = "MCP server for Blender with automatic local instance discovery (unofficial downstream of Blender Lab MCP)"
+readme = "README.md"
 requires-python = ">=3.10"
+license = { text = "GPL-3.0-or-later" }
+authors = [{ name = "marble810" }]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Multimedia :: Graphics :: 3D Modeling",
+]
 dependencies = [
     "docutils",
-    "mcp[cli]>=1.2.0",
+    "mcp[cli]>=1.2,<2",
     "pyyaml",
 ]
 
+[project.urls]
+Homepage = "https://github.com/marble810/blender-mcp-connect"
+Repository = "https://github.com/marble810/blender-mcp-connect"
+Issues = "https://github.com/marble810/blender-mcp-connect/issues"
+Changelog = "https://github.com/marble810/blender-mcp-connect/blob/main/CHANGELOG.md"
+Upstream = "https://projects.blender.org/lab/blender_mcp"
+
 [project.scripts]
-blender-mcp = "blmcp:main"
+blender-mcp-connect = "blmcp:main"
 
 [tool.setuptools.packages.find]
 where = ["."]

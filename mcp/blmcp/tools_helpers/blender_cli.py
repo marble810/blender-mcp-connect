@@ -72,6 +72,10 @@ def run_blender_cli(
             text=True,
             timeout=timeout,
             check=False,
+            # The MCP server's own stdin is the live MCP stdio pipe.
+            # Without this the child Blender process inherits that pipe on
+            # Windows and deadlocks waiting for input (upstream issue #42).
+            stdin=subprocess.DEVNULL,
         )
     except subprocess.TimeoutExpired as ex:
         raise RuntimeError("Blender CLI timed out after {:.0f}s".format(timeout)) from ex

@@ -3,3 +3,7 @@ __pycache__/
 .venv/
 build/
 *.mcpb
+
+# Runtime / agent artifacts.
+.pi-subagents/
+dist/
