@@ -28,6 +28,50 @@ MCP Client  ⇐ MCP/stdio ⇒  blender-mcp-connect  ⇐ TCP socket ⇒  Blender 
 ```
 
 
+## Installation
+
+### 1. Install the Blender Extension
+
+Blender 5.1 or newer is required.
+
+**Drag and drop** the link below into a Blender window (same as the
+official Blender Lab MCP page):
+
+- [**blender_mcp_connect_0.1.0.zip**](https://github.com/marble810/blender-mcp-connect/releases/download/connect-v0.1.0/blender_mcp_connect_0.1.0.zip)
+
+…or download the ZIP from the
+[GitHub Releases](https://github.com/marble810/blender-mcp-connect/releases)
+page and use **Edit → Preferences → Get Extensions → Install from Disk…**.
+
+Then enable the **MCP Connect** add-on.
+
+> The official Blender Lab MCP add-on and MCP Connect must not be enabled
+> at the same time.
+
+### 2. Configure your MCP client
+
+Add the following entry to your MCP client configuration
+(e.g. `mcp.json`, `claude_desktop_config.json`):
+
+```json
+{
+  "mcpServers": {
+    "blender": {
+      "command": "uvx",
+      "args": [
+        "--from",
+        "blender-mcp-connect==0.1.0",
+        "blender-mcp-connect"
+      ]
+    }
+  }
+}
+```
+
+No repository clone, no server path, no bridge-port configuration and no
+`BLENDER_PATH` are required: the extension publishes a per-instance
+descriptor and the MCP server discovers it automatically.
+
 ## Blender Add-on
 
 Located in ``addon/blender_mcp_addon/``.
