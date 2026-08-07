@@ -14,8 +14,10 @@ __all__ = (
 
 import json
 import os
+import queue
 import select
 import subprocess
+import threading
 import time
 from typing import Any, Self
 
@@ -47,6 +49,36 @@ class MCPClient:
         )
         self._next_id = 1
 
+        # Windows pipes are not sockets, so ``select`` cannot be used on
+        # ``stdout`` there (WinError 10038). A reader thread + queue is used
+        # instead on Windows; POSIX keeps the upstream select-based path.
+        self._lines: queue.Queue[str] = queue.Queue()
+        self._reader_thread: threading.Thread | None = None
+        if os.name == "nt":
+            self._reader_thread = threading.Thread(target=self._read_lines, daemon=True)
+            self._reader_thread.start()
+
+    def _read_lines(self) -> None:
+        """
+        Background thread: read stdout lines and enqueue them (Windows only).
+        """
+        assert self._proc.stdout is not None
+        for raw in self._proc.stdout:
+            self._lines.put(raw)
+        self._lines.put("")  # EOF sentinel.
+
+    def _read_line_windows(self, timeout: float) -> str:
+        """
+        Read one stdout line with a timeout on Windows.
+        """
+        try:
+            line = self._lines.get(timeout=timeout)
+        except queue.Empty as ex:
+            raise RuntimeError("Timeout waiting for MCP server output") from ex
+        if line == "":
+            raise RuntimeError("MCP server closed stdout unexpectedly")
+        return line
+
     def _send_request(self, method: str, params: dict[str, object] | None = None) -> dict[str, Any]:
         """
         Send a JSON-RPC request and wait for the matching response.
@@ -77,14 +109,17 @@ class MCPClient:
                 raise RuntimeError(
                     "Timeout ({:d}s) waiting for response to {:s}".format(_REQUEST_TIMEOUT, method)
                 )
-            ready, _, _ = select.select([self._proc.stdout], [], [], remaining)
-            if not ready:
-                raise RuntimeError(
-                    "Timeout ({:d}s) waiting for response to {:s}".format(_REQUEST_TIMEOUT, method)
-                )
-            line = self._proc.stdout.readline()
-            if not line:
-                raise RuntimeError("MCP server closed stdout unexpectedly")
+            if os.name == "nt":
+                line = self._read_line_windows(remaining)
+            else:
+                ready, _, _ = select.select([self._proc.stdout], [], [], remaining)
+                if not ready:
+                    raise RuntimeError(
+                        "Timeout ({:d}s) waiting for response to {:s}".format(_REQUEST_TIMEOUT, method)
+                    )
+                line = self._proc.stdout.readline()
+                if not line:
+                    raise RuntimeError("MCP server closed stdout unexpectedly")
             line = line.strip()
             if not line:
                 continue

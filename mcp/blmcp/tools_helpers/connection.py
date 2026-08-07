@@ -31,7 +31,10 @@ import socket
 from . import instance_discovery
 
 _DEFAULT_HOST = "127.0.0.1"
-_DEFAULT_PORT = 9876
+# Legacy explicit-mode default port. The official 9876 falls inside
+# Windows Hyper-V excluded port ranges (e.g. 9784-9883) on some machines
+# and fails to bind with WinError 10013; use a high port instead.
+_DEFAULT_PORT = 19876
 _TIMEOUT = 300.0
 _RECV_BUFFER_SIZE = 65536
 

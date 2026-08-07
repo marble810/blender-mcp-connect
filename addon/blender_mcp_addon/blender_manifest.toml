@@ -3,7 +3,7 @@ schema_version = "1.0.0"
 id = "blender_mcp_connect"
 version = "0.1.0"
 name = "MCP Connect"
-tagline = "MCP server add-on for LLM interaction (unofficial downstream of Blender Lab MCP)"
+tagline = "MCP server add-on for LLM interaction"
 maintainer = "marble810"
 type = "add-on"
 website = "https://github.com/marble810/blender-mcp-connect"
@@ -17,4 +17,4 @@ tags = ["Development"]
 
 [permissions]
 network = "Runs a local TCP socket server for MCP client communication"
-files = "Writes a per-instance runtime descriptor for automatic MCP client discovery"
+files = "Writes a per-instance runtime descriptor for MCP discovery"

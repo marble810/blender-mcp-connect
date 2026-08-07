@@ -36,7 +36,8 @@ _file_handlers: list[object] = []
 
 
 # Keep descriptor metadata (blend file path) current across load/save.
-def _refresh_descriptor() -> None:
+# Blender calls these handlers with positional arguments (e.g. filepath).
+def _refresh_descriptor(*_args) -> None:
     mcp_to_blender_server.refresh_descriptor()
 
 # This error is shown in the UI & command line when online access isn't enabled.

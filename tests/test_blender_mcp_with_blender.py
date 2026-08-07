@@ -54,9 +54,12 @@ if _REPO_DIR not in sys.path:
 from tests.mcp_client import MCPClient
 
 # Fixed ports for the test servers (background and foreground).
-_PORT_BACKGROUND = 9876
-_PORT_FOREGROUND = 9877
-_PORT_INTERACTIVE = 9878
+# NOTE: upstream defaults (9876/9877/9878) fall inside Windows Hyper-V
+# excluded port ranges on some machines (e.g. 9784-9883), which makes
+# bind() fail with WinError 10013. Use ports outside those ranges.
+_PORT_BACKGROUND = 19876
+_PORT_FOREGROUND = 19877
+_PORT_INTERACTIVE = 19878
 
 # Scale all timeouts (e.g. `GLOBAL_TIMEOUT_SCALE=2` doubles every limit).
 _TIMEOUT_SCALE = float(os.environ.get("GLOBAL_TIMEOUT_SCALE", "1"))
@@ -279,7 +282,7 @@ class _TestServerMixin:
             env=env,
         )
 
-        zips = glob.glob(os.path.join(tmpdir, "mcp-*.zip"))
+        zips = glob.glob(os.path.join(tmpdir, "blender_mcp_connect-*.zip"))
         if not zips:
             raise RuntimeError("Extension build did not produce a zip")
 
@@ -305,7 +308,7 @@ class _TestServerMixin:
                     (
                         "import bpy; "
                         "prefs = bpy.context.preferences.addons"
-                        "['bl_ext.user_default.mcp'].preferences; "
+                        "['bl_ext.user_default.blender_mcp_connect'].preferences; "
                         "prefs.port = {:d}; "
                         "prefs.autostart_delay = 0.0; "
                         "bpy.ops.wm.save_userpref()"

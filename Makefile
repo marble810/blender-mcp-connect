@@ -52,7 +52,8 @@ Environment Variables
    BLENDER_PATH        Path to the Blender binary used by the MCP server
                        (default: blender).
    BLENDER_MCP_HOST    Host the MCP addon listens on (default: localhost).
-   BLENDER_MCP_PORT    Port the MCP addon listens on (default: 9876).
+   BLENDER_MCP_PORT    Port the MCP addon listens on (default: 19876, high port to avoid
+                       Windows Hyper-V excluded ranges that cover the official 9876).
    BLENDER_MCP_TIMEOUT Startup timeout in seconds for tests (default: 10).
    GLOBAL_TIMEOUT_SCALE
                        Multiply all test timeouts by this factor

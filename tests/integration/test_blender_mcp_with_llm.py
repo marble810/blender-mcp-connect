@@ -47,10 +47,10 @@ _REPO_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__fi
 if _REPO_DIR not in sys.path:
     sys.path.insert(0, _REPO_DIR)
 
-# Fixed ports (avoid existing 9876-9878).
-_PORT_BLENDER = 9879
-_PORT_MOCK_LLM = 9880
-_PORT_LLAMA_SERVER = 9881
+# Fixed ports (avoid the Windows Hyper-V excluded range ~9784-9883).
+_PORT_BLENDER = 19879
+_PORT_MOCK_LLM = 19880
+_PORT_LLAMA_SERVER = 19881
 
 # Scale all timeouts (e.g. `GLOBAL_TIMEOUT_SCALE=2` doubles every limit).
 _TIMEOUT_SCALE = float(os.environ.get("GLOBAL_TIMEOUT_SCALE", "1"))
@@ -584,7 +584,7 @@ class TestChatClient(unittest.TestCase):
                 ],
                 env=env,
             )
-            zips = glob.glob(os.path.join(tmpdir, "mcp-*.zip"))
+            zips = glob.glob(os.path.join(tmpdir, "blender_mcp_connect-*.zip"))
             if not zips:
                 raise RuntimeError("Extension build did not produce a zip")
             st.status("OK")
@@ -612,7 +612,7 @@ class TestChatClient(unittest.TestCase):
                     (
                         "import bpy; "
                         "prefs = bpy.context.preferences.addons"
-                        "['bl_ext.user_default.mcp'].preferences; "
+                        "['bl_ext.user_default.blender_mcp_connect'].preferences; "
                         "prefs.port = {:d}; "
                         "prefs.autostart_delay = 0.0; "
                         "bpy.ops.wm.save_userpref()"
