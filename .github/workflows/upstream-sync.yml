@@ -1,0 +1,39 @@
+name: Upstream Sync
+
+# Updates the `upstream-main` mirror branch to the latest Blender Lab MCP
+# `main`. Never merges upstream into the downstream `main` automatically:
+# that is a reviewed manual process (see UPSTREAM.md).
+
+on:
+  schedule:
+    # Daily at 06:00 UTC.
+    - cron: "0 6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Fetch upstream and update mirror
+        run: |
+          git remote add upstream https://projects.blender.org/lab/blender_mcp.git
+          git fetch upstream main
+          git branch -f upstream-main upstream/main
+          git push --force-with-lease origin upstream-main
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Report drift on main
+        run: |
+          git fetch origin main
+          BEHIND=$(git rev-list --count upstream/main..origin/main 2>/dev/null || echo "?")
+          AHEAD=$(git rev-list --count origin/main..upstream/main 2>/dev/null || echo "?")
+          echo "upstream commits ahead of downstream main: ${AHEAD}"
+          echo "downstream commits ahead of upstream main: ${BEHIND}"

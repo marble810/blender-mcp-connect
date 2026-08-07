@@ -1,0 +1,63 @@
+name: Release Extension
+
+# Builds the Blender Extension ZIP on `connect-v*` tags and attaches it to a
+# GitHub release. The extension is distributed through GitHub Releases, not
+# the Blender Lab repository.
+
+on:
+  push:
+    tags:
+      - "connect-v*"
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Assemble extension ZIP
+        run: |
+          VERSION="${GITHUB_REF_NAME#connect-v}"
+          python - <<'PY'
+          import os, shutil, tempfile, zipfile, pathlib
+          src = "addon/blender_mcp_addon"
+          version = os.environ["VERSION"]
+          out = "dist_extension"
+          os.makedirs(out, exist_ok=True)
+          zip_path = os.path.join(out, f"blender_mcp_connect_{version}.zip")
+          with tempfile.TemporaryDirectory() as tmp:
+              tmp_root = pathlib.Path(tmp)
+              addon_dir = tmp_root / "blender_mcp_connect"
+              shutil.copytree(src, addon_dir)
+              # Remove anything unintended.
+              for root, _dirs, files in os.walk(addon_dir):
+                  for f in files:
+                      if f.endswith(".pyc") or "__pycache__" in root:
+                          os.remove(os.path.join(root, f))
+              with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as zf:
+                  for file in sorted(addon_dir.rglob("*")):
+                      if file.is_file():
+                          zf.write(file, file.relative_to(tmp_root))
+          print("created", zip_path)
+          PY
+
+      - name: Create checksums
+        run: |
+          cd dist_extension
+          sha256sum *.zip > SHA256SUMS.txt
+          cat SHA256SUMS.txt
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: extension-zip
+          path: dist_extension/*
+
+      - name: Attach to release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist_extension/*
+          generate_release_notes: true

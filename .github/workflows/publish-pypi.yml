@@ -1,0 +1,47 @@
+name: Publish PyPI
+
+# Publishes `blender-mcp-connect` to PyPI using Trusted Publishing (OIDC).
+# Only downstream release tags (`connect-v*`) in the protected `pypi`
+# environment may publish. Pull requests cannot publish.
+
+on:
+  push:
+    tags:
+      - "connect-v*"
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment: pypi
+
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Verify version vs tag
+        run: |
+          TAG="${GITHUB_REF_NAME#connect-v}"
+          VERSION=$(python -c "import tomllib; print(tomllib.load(open('mcp/pyproject.toml','rb'))['project']['version'])")
+          echo "tag version: ${TAG} / package version: ${VERSION}"
+          test "${TAG}" = "${VERSION}"
+
+      - name: Build and check
+        run: |
+          python -m pip install --upgrade pip build twine
+          python -m build ./mcp --outdir dist
+          python -m twine check dist/*
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: dist/
