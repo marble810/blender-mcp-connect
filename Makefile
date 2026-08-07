@@ -89,6 +89,10 @@ test:
 	$(PYTHON) tests/test_rst_parse.py
 	$(PYTHON) tests/test_rst_search.py
 	$(PYTHON) tests/test_mcp_server.py
+	$(PYTHON) tests/test_instance_registry.py
+	$(PYTHON) tests/test_connection.py
+	$(PYTHON) tests/test_addon_server_e2e.py
+	$(PYTHON) tests/test_packaging.py
 	$(PYTHON) tests/test_blender_mcp_with_blender.py
 
 test_rst_parse:

@@ -1,0 +1,85 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/marble810/blender-mcp-connect/blob/main/docs/instance-descriptor.schema.json",
+  "title": "Blender MCP Connect instance descriptor",
+  "description": "Runtime descriptor written by the Blender MCP Connect extension and read by the external MCP server for automatic instance discovery.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "protocolVersion",
+    "instanceId",
+    "pid",
+    "host",
+    "port",
+    "token",
+    "blenderVersion",
+    "extensionVersion",
+    "startedAt"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "description": "Version of this descriptor file format. Bump on breaking descriptor changes.",
+      "type": "integer",
+      "const": 1
+    },
+    "protocolVersion": {
+      "description": "Version of the bridge wire protocol (NUL-delimited JSON over TCP). Must match the MCP server's supported version.",
+      "type": "integer",
+      "const": 1
+    },
+    "instanceId": {
+      "description": "UUIDv4 identifying this Blender process instance. Stable for the lifetime of the Blender process.",
+      "type": "string",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+    },
+    "pid": {
+      "description": "Hint only; PID reuse means this is never authoritative. Verified via authenticated hello handshake.",
+      "type": "integer",
+      "minimum": 1
+    },
+    "host": {
+      "description": "Bridge bind host. Automatic mode always uses 127.0.0.1.",
+      "type": "string",
+      "const": "127.0.0.1"
+    },
+    "port": {
+      "description": "Actual OS-assigned bridge port. Never 0 in a published descriptor.",
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 65535
+    },
+    "token": {
+      "description": "Random capability token. Never logged or displayed. Verified with constant-time comparison before any code execution.",
+      "type": "string",
+      "minLength": 32,
+      "maxLength": 128
+    },
+    "blenderVersion": {
+      "description": "Blender version string, e.g. 5.1.0.",
+      "type": "string"
+    },
+    "extensionVersion": {
+      "description": "MCP Connect extension version.",
+      "type": "string"
+    },
+    "blenderExecutable": {
+      "description": "Absolute path to the running Blender executable. Used for _for_cli tools when BLENDER_PATH is unset.",
+      "type": "string"
+    },
+    "blendFile": {
+      "description": "Absolute path of the currently open .blend file, or empty string when none.",
+      "type": "string"
+    },
+    "startedAt": {
+      "description": "UTC ISO-8601 timestamp when the bridge started.",
+      "type": "string",
+      "format": "date-time"
+    },
+    "updatedAt": {
+      "description": "UTC ISO-8601 timestamp of the last metadata refresh.",
+      "type": "string",
+      "format": "date-time"
+    }
+  }
+}

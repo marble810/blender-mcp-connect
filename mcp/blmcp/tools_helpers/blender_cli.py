@@ -18,7 +18,7 @@ import os
 import subprocess
 from collections.abc import Generator
 
-from blmcp.tools_helpers.connection import send_code
+from blmcp.tools_helpers.connection import resolve_endpoint, send_code
 
 _log = logging.getLogger(__name__)
 
@@ -29,7 +29,26 @@ _MAX_NUMBERED_PATHS = 10000
 
 
 def _get_blender_path() -> str:
-    return os.environ.get("BLENDER_PATH", "blender")
+    """
+    Resolve the Blender executable, highest priority first:
+
+    1. Explicit ``BLENDER_PATH`` environment variable.
+    2. The authenticated selected instance's ``blenderExecutable`` metadata.
+    3. ``blender`` on ``PATH``.
+    """
+    explicit = os.environ.get("BLENDER_PATH")
+    if explicit:
+        return explicit
+    try:
+        resolved = resolve_endpoint()
+    except ConnectionError:
+        return "blender"
+    instance = resolved.get("instance")
+    if instance is not None:
+        executable = getattr(instance, "blender_executable", "")
+        if executable:
+            return executable
+    return "blender"
 
 
 def run_blender_cli(

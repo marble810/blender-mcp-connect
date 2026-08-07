@@ -14,7 +14,11 @@ Blender's main thread.
 __all__ = (
     "DEFAULT_HOST",
     "DEFAULT_PORT",
+    "EXTENSION_VERSION",
     "TIMER_INTERVAL_ACTIVE",
+    "bound_endpoint",
+    "instance_id",
+    "instance_id_short",
     "is_running",
     "poll",
     "poll_blocking",
@@ -26,8 +30,10 @@ __all__ = (
     "use_log",
 )
 
+import hmac
 import json
 import math
+import os
 import select
 import socket
 import sys
@@ -35,8 +41,16 @@ import traceback
 from collections.abc import Callable
 from typing import NamedTuple
 
-DEFAULT_HOST = "localhost"
-DEFAULT_PORT = 9876
+from . import instance_registry
+
+DEFAULT_HOST = "127.0.0.1"
+# Port ``0`` means: bind an OS-assigned port (automatic mode).
+# Any other value keeps the legacy fixed-port mode for interoperability
+# with the official blender-mcp server.
+DEFAULT_PORT = 0
+
+#: Extension version, kept in sync with ``blender_manifest.toml``.
+EXTENSION_VERSION = "0.1.0"
 
 # Seconds between main-thread timer ticks.
 TIMER_INTERVAL_ACTIVE = 0.05
@@ -174,6 +188,11 @@ class _State:
     __slots__ = (
         "sock",
         "clients",
+        "instance_id",
+        "token",
+        "host",
+        "port",
+        "automatic",
     )
 
     def __init__(self) -> None:
@@ -181,6 +200,16 @@ class _State:
         self.sock: socket.socket | None = None
         # Connected clients that have not yet sent a complete request.
         self.clients: list[_Client] = []
+        # Process-lifetime instance identity (stable across restarts of the
+        # bridge within one Blender process).
+        self.instance_id: str | None = None
+        # Capability token, rotated on every `start()`. Never logged.
+        self.token: str | None = None
+        # Actual bound endpoint (filled in by `start`).
+        self.host: str = ""
+        self.port: int = 0
+        # True when the bridge was started with port ``0`` (automatic mode).
+        self.automatic: bool = False
 
 
 _state = _State()
@@ -282,6 +311,64 @@ def _execute_code(
     return _ExecResult(response)
 
 
+def _auth_error_message(request: dict[str, object]) -> str | None:
+    """
+    Validate protocol version, instance identity and token for *request*.
+
+    Returns an error message, or ``None`` when the request is authorized.
+    Legacy requests (without ``protocolVersion``) are accepted only in
+    explicit fixed-port mode so the official blender-mcp server can still
+    interoperate; automatic mode never downgrades to unauthenticated
+    execution.
+    """
+    protocol = request.get("protocolVersion")
+    if protocol is None:
+        if _state.automatic:
+            return (
+                "Authentication required: automatic mode requires "
+                "'protocolVersion', 'instanceId' and 'token'."
+            )
+        return None
+
+    if protocol != instance_registry.PROTOCOL_VERSION:
+        return (
+            "Protocol version mismatch: server expects {:d}, got {!r}. "
+            "Update the MCP server (blender-mcp-connect)."
+        ).format(instance_registry.PROTOCOL_VERSION, protocol)
+    if request.get("instanceId") != _state.instance_id:
+        return "Instance identity mismatch."
+    token = request.get("token")
+    if not isinstance(token, str) or _state.token is None or not hmac.compare_digest(token, _state.token):
+        return "Authentication failed: invalid token."
+    return None
+
+
+def _handle_hello(request: dict[str, object]) -> dict[str, object]:
+    """
+    Authenticated health/identity handshake used by automatic discovery.
+    """
+    error = _auth_error_message(request)
+    if error is not None:
+        return {"status": "error", "message": error}
+    try:
+        import bpy  # pylint: disable=import-error
+        blender_version = bpy.app.version_string
+        blend_file = bpy.data.filepath
+    except Exception:  # pylint: disable=broad-exception-caught
+        blender_version = ""
+        blend_file = ""
+    return {
+        "status": "ok",
+        "result": {
+            "protocolVersion": instance_registry.PROTOCOL_VERSION,
+            "instanceId": _state.instance_id,
+            "blenderVersion": blender_version,
+            "extensionVersion": EXTENSION_VERSION,
+            "blendFile": blend_file,
+        },
+    }
+
+
 def _execute_code_from_request(
         data: bytes,
 ) -> tuple[_ExecResult, bool]:
@@ -301,11 +388,19 @@ def _execute_code_from_request(
     # Any error should be rare, the "default" exception path is fine.
     request = json.loads(data)
 
-    if request.get("type") != "execute":
+    request_type = request.get("type")
+    if request_type == "hello":
+        return _ExecResult(_handle_hello(request)), False
+    if request_type != "execute":
         return _ExecResult({
             "status": "error",
-            "message": "Unknown request type: {!r}".format(request.get("type")),
+            "message": "Unknown request type: {!r}".format(request_type),
         }), False
+
+    auth_error = _auth_error_message(request)
+    if auth_error is not None:
+        return _ExecResult({"status": "error", "message": auth_error}), False
+
     code = request.get("code", "")
 
     # Not expected in normal use, but a clear message beats a cryptic trace-back,
@@ -554,13 +649,46 @@ def poll_blocking(timeout: float = _POLL_BLOCKING_TIMEOUT) -> bool:
 # ---------------------------------------------------------------------------
 # Public API.
 
-def start(host: str, port: int) -> None:
+def _descriptor_publish() -> None:
+    """
+    Write the instance descriptor for the running bridge.
+
+    Raises when publication fails; the caller must roll back startup.
+    """
+    assert _state.instance_id is not None
+    assert _state.token is not None
+    try:
+        import bpy  # pylint: disable=import-error
+        blender_version = bpy.app.version_string
+        blender_executable = bpy.app.binary_path
+        blend_file = bpy.data.filepath
+    except Exception:  # pylint: disable=broad-exception-caught
+        blender_version = ""
+        blender_executable = ""
+        blend_file = ""
+    instance_registry.write_descriptor(
+        instance_id=_state.instance_id,
+        pid=os.getpid(),
+        host=_state.host,
+        port=_state.port,
+        token=_state.token,
+        blender_version=blender_version,
+        extension_version=EXTENSION_VERSION,
+        blender_executable=blender_executable,
+        blend_file=blend_file,
+    )
+
+
+def start(host: str, port: int) -> tuple[str, int]:
     """
     Bind the listening socket and begin accepting connections.
 
     This does not block. The caller must arrange for ``poll`` to be
     called periodically (see ``execute_interactive`` and
     ``execute_blocking``).
+
+    When *port* is ``0`` the OS assigns an available loopback port
+    (automatic mode). Returns the actual ``(host, port)`` that was bound.
 
     Callers should catch ``Exception`` broadly rather than specific types,
     since failures may be:
@@ -571,24 +699,69 @@ def start(host: str, port: int) -> None:
     if is_running():
         raise RuntimeError("Server is already running")
 
+    automatic = port == 0
+    bind_host = "127.0.0.1" if automatic else host
+
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     try:
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         sock.setblocking(False)
-        sock.bind((host, port))
+        sock.bind((bind_host, port))
+        actual_host, actual_port = sock.getsockname()
         sock.listen(_LISTEN_BACKLOG)
     except OSError:
         sock.close()
         raise
 
     _state.sock = sock
+    _state.host = actual_host
+    _state.port = actual_port
+    _state.automatic = automatic
+    if _state.instance_id is None:
+        _state.instance_id = instance_registry.new_instance_id()
+    _state.token = instance_registry.new_token()
+
+    # Publish the descriptor only after bind/listen succeeded.
+    # On failure, roll back startup: an undiscoverable code-execution
+    # service must not keep running.
+    try:
+        _descriptor_publish()
+    except Exception:
+        _state.sock = None
+        sock.close()
+        raise
+
+    return actual_host, actual_port
+
+
+def refresh_descriptor() -> None:
+    """
+    Re-publish the descriptor with current metadata (e.g. after load/save).
+
+    Only refreshes when the bridge is running; failures are non-fatal here.
+    """
+    if _state.sock is None:
+        return
+    try:
+        _descriptor_publish()
+    except Exception:  # pylint: disable=broad-exception-caught
+        pass
 
 
 def stop() -> None:
     """
     Close the listening socket, all client connections, and deferred responses.
+
+    The instance descriptor is withdrawn before the socket closes so a
+    discovery scan never finds a dying bridge.
     """
     from . import deferred_tool
+
+    if _state.instance_id is not None:
+        try:
+            instance_registry.remove_descriptor(_state.instance_id)
+        except Exception:  # pylint: disable=broad-exception-caught
+            pass
 
     sock = _state.sock
     _state.sock = None
@@ -613,3 +786,28 @@ def is_running() -> bool:
     Return whether the server is currently listening.
     """
     return _state.sock is not None
+
+
+def bound_endpoint() -> tuple[str, int] | None:
+    """
+    Return the actual bound ``(host, port)``, or ``None`` when not running.
+    """
+    if _state.sock is None:
+        return None
+    return _state.host, _state.port
+
+
+def instance_id() -> str | None:
+    """
+    Return the process-lifetime instance ID, or ``None`` when not running.
+    """
+    return _state.instance_id
+
+
+def instance_id_short() -> str | None:
+    """
+    Return the first 8 characters of the instance ID for display purposes.
+    """
+    if _state.instance_id is None:
+        return None
+    return _state.instance_id[:8]

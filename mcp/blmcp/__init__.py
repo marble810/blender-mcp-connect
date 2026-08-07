@@ -30,6 +30,37 @@ _USE_HTTP_SUPPORT = True
 _TRANSPORTS = ("stdio", *(("http",) if _USE_HTTP_SUPPORT else ()))
 
 
+def _list_instances() -> int:
+    """
+    Diagnostic command: print discovered Blender instances to stdout.
+
+    Only used from a terminal; never during stdio server operation.
+    """
+    from blmcp.tools_helpers import instance_discovery
+
+    instances = instance_discovery.discover_instances()
+    if not instances:
+        print("No Blender MCP Connect instance descriptors found.")
+        print("Runtime dir: {:s}".format(instance_discovery.runtime_dir()))
+        return 0
+    for instance in instances:
+        healthy = instance_discovery.probe_instance(instance)
+        ok = (
+            healthy is not None
+            and healthy.get("status") == "ok"
+            and isinstance(healthy.get("result"), dict)
+            and healthy["result"].get("instanceId") == instance.instance_id
+        )
+        print("{:s}  {:s}  Blender {:s}  {:s}  {}".format(
+            instance.instance_id,
+            "ok" if ok else "stale",
+            instance.blender_version or "?",
+            os.path.basename(instance.blend_file) if instance.blend_file else "(no file)",
+            "{:s}:{:d}".format(instance.host, instance.port),
+        ))
+    return 0
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="MCP server for Blender.")
     parser.add_argument(
@@ -50,7 +81,27 @@ def main() -> int:
             default=8000,
             help="Port to bind to for HTTP transports (default: 8000).",
         )
+    parser.add_argument(
+        "--list-instances",
+        action="store_true",
+        help="List discovered Blender instances and exit (diagnostic).",
+    )
+    parser.add_argument(
+        "--blender-instance",
+        default=None,
+        metavar="INSTANCE_ID",
+        help=(
+            "Explicitly select a Blender instance by full instance ID "
+            "(sets BLENDER_MCP_INSTANCE)."
+        ),
+    )
     args = parser.parse_args()
+
+    if args.blender_instance:
+        os.environ["BLENDER_MCP_INSTANCE"] = args.blender_instance
+
+    if args.list_instances:
+        return _list_instances()
 
     # Load prompts.
     data_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")

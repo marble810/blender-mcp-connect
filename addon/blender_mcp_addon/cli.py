@@ -33,23 +33,28 @@ def cli_execute(argv: list[str]) -> int:
     parser.add_argument(
         "--host",
         default=mcp_to_blender_server.DEFAULT_HOST,
-        help="Host to bind to.",
+        help="Host to bind to (default: 127.0.0.1).",
     )
     parser.add_argument(
         "--port",
         type=int,
         default=mcp_to_blender_server.DEFAULT_PORT,
-        help="Port to listen on.",
+        help=(
+            "Port to listen on. 0 (default) assigns an OS-selected port and "
+            "publishes an instance descriptor for automatic discovery."
+        ),
     )
     args = parser.parse_args(argv)
 
     try:
-        mcp_to_blender_server.start(args.host, args.port)
+        actual_host, actual_port = mcp_to_blender_server.start(args.host, args.port)
     except Exception as ex:  # pylint: disable=broad-exception-caught
         print("Error: {:s}".format(str(ex)))
         return 1
 
-    print("MCP server started on {:s}:{:d}, press Ctrl+C to exit.".format(args.host, args.port))
+    print(
+        "MCP server started on {:s}:{:d}, press Ctrl+C to exit.".format(actual_host, actual_port)
+    )
 
     try:
         execute_blocking.run()

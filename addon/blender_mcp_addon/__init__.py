@@ -21,7 +21,7 @@ from bpy.props import (
 
 from . import mcp_to_blender_server
 
-_PORT_MIN = 1024
+_PORT_MIN = 0
 _PORT_MAX = 65535
 
 # Default seconds to wait after registration before auto-starting the server.
@@ -30,6 +30,14 @@ _AUTOSTART_DELAY = 1.0
 
 # Store the CLI handle, only for correct register/unregister.
 _cli_commands: list[object] = []
+
+# File handlers registered for descriptor metadata refresh.
+_file_handlers: list[object] = []
+
+
+# Keep descriptor metadata (blend file path) current across load/save.
+def _refresh_descriptor() -> None:
+    mcp_to_blender_server.refresh_descriptor()
 
 # This error is shown in the UI & command line when online access isn't enabled.
 #
@@ -95,6 +103,11 @@ class _BlenderMCPPreferences(bpy.types.AddonPreferences):  # type: ignore[misc]
     )
     port: IntProperty(  # type: ignore[valid-type]
         name="Port",
+        description=(
+            "Port for the bridge server. 0 assigns an automatic OS-selected "
+            "loopback port (recommended). Set a fixed port only for "
+            "interoperability with the official blender-mcp server."
+        ),
         default=mcp_to_blender_server.DEFAULT_PORT,
         min=_PORT_MIN,
         max=_PORT_MAX,
@@ -197,7 +210,15 @@ class _BlenderMCPPreferences(bpy.types.AddonPreferences):  # type: ignore[misc]
 
         if mcp_to_blender_server.is_running():
             layout.operator("blmcp.server_stop", icon="CANCEL")
-            layout.label(text="Server is running", icon="CHECKMARK")
+            endpoint = mcp_to_blender_server.bound_endpoint()
+            inst = mcp_to_blender_server.instance_id_short()
+            if endpoint is not None:
+                text = "Server is running on {:s}:{:d}".format(endpoint[0], endpoint[1])
+                if inst:
+                    text += " (instance {:s})".format(inst)
+                layout.label(text=text, icon="CHECKMARK")
+            else:
+                layout.label(text="Server is running", icon="CHECKMARK")
         else:
             layout.operator("blmcp.server_start", icon="PLAY")
             layout.label(text="Server is stopped", icon="X")
@@ -232,7 +253,7 @@ class _BLMCP_OT_server_start(bpy.types.Operator):  # type: ignore[misc]
         )
         mcp_to_blender_server.use_log = prefs.use_log
         try:
-            mcp_to_blender_server.start(prefs.host, prefs.port)
+            actual_host, actual_port = mcp_to_blender_server.start(prefs.host, prefs.port)
         except Exception as ex:  # pylint: disable=broad-exception-caught
             _State.startup_info_set_from_exception(ex)
             self.report({"ERROR"}, str(ex))
@@ -241,7 +262,7 @@ class _BLMCP_OT_server_start(bpy.types.Operator):  # type: ignore[misc]
             execute_interactive.run,
             first_interval=mcp_to_blender_server.TIMER_INTERVAL_ACTIVE,
             persistent=True)
-        self.report({"INFO"}, "MCP server started on {:s}:{:d}".format(prefs.host, prefs.port))
+        self.report({"INFO"}, "MCP server started on {:s}:{:d}".format(actual_host, actual_port))
         return {"FINISHED"}
 
 
@@ -289,7 +310,7 @@ def _autostart_timer() -> None:
         return
 
     try:
-        mcp_to_blender_server.start(prefs.host, prefs.port)
+        actual_host, actual_port = mcp_to_blender_server.start(prefs.host, prefs.port)
     except Exception as ex:  # pylint: disable=broad-exception-caught
         _State.startup_info_set_from_exception(ex)
         return
@@ -298,6 +319,11 @@ def _autostart_timer() -> None:
         execute_interactive.run,
         first_interval=mcp_to_blender_server.TIMER_INTERVAL_ACTIVE,
         persistent=True)
+    print("MCP bridge server started on {:s}:{:d} (instance {:s})".format(
+        actual_host,
+        actual_port,
+        mcp_to_blender_server.instance_id_short() or "",
+    ))
 
 
 def _cli_execute_handler(argv: list[str]) -> int:
@@ -322,6 +348,10 @@ def register() -> None:
         bpy.utils.register_class(cls)
     _cli_commands.append(bpy.utils.register_cli_command("blender_mcp", _cli_execute_handler))
 
+    bpy.app.handlers.load_post.append(_refresh_descriptor)
+    bpy.app.handlers.save_post.append(_refresh_descriptor)
+    _file_handlers.extend((_refresh_descriptor, _refresh_descriptor))
+
     # Defer auto-start so the server does not slow down Blender's startup.
     if not bpy.app.background:
         if not _State.startup_online_ok_or_error():
@@ -345,6 +375,13 @@ def unregister() -> None:
 
     if bpy.app.timers.is_registered(_autostart_timer):
         bpy.app.timers.unregister(_autostart_timer)
+
+    for fn in _file_handlers:
+        if fn in bpy.app.handlers.load_post:
+            bpy.app.handlers.load_post.remove(fn)
+        if fn in bpy.app.handlers.save_post:
+            bpy.app.handlers.save_post.remove(fn)
+    _file_handlers.clear()
 
     mcp_to_blender_server.stop()
     if bpy.app.timers.is_registered(execute_interactive.run):
