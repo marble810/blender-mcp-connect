@@ -17,8 +17,12 @@ __all__ = ()
 
 import os
 import re
-import tomllib
 import unittest
+
+try:
+    import tomllib
+except ModuleNotFoundError:  # Python < 3.11
+    import tomli as tomllib  # type: ignore[no-redef]
 
 _REPO_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 _MCP_PYPROJECT = os.path.join(_REPO_DIR, "mcp", "pyproject.toml")
