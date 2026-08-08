@@ -142,19 +142,17 @@ See [readme_tools.rst](readme_tools.rst) for the tools the MCP server exposes.
 # 中文版说明
 
 > 中文版仅供参考，以英文原版为准。
-> 本文档使用 wikilink 导航：`[[#小节标题|显示名]]` 跳转到本文档内的小节，`[[文件名]]` 跳转到仓库内的其他文件。
-
 ## 目录
 
-- [[#让AI帮你装|让AI帮你装]]
-- [[#概述|概述]]
-- [[#安装|安装]]
-- [[#Blender 插件|Blender 插件]]
-- [[#MCP 服务器|MCP 服务器]]
+- [让AI帮你装](#让ai帮你装)
+- [概述](#概述)
+- [安装](#安装)
+- [Blender 插件](#blender-插件)
+- [MCP 服务器](#mcp-服务器)
 
 ## 让AI帮你装
 
-如果你是帮助用户配置 Blender MCP Connect 的 AI 编程智能体（如 Claude Code、Cursor、Codex），请先阅读 **[[llm.md]]**。它会引导你走完完整交互流程：访谈用户确认目标 Blender → 下载扩展 → 安装 → 部署 `mcp.json` → 验证连接。
+如果你是帮助用户配置 Blender MCP Connect 的 AI 编程智能体（如 Claude Code、Cursor、Codex），请先阅读 **[`llm.md`](llm.md)**。它会引导你走完完整交互流程：访谈用户确认目标 Blender → 下载扩展 → 安装 → 部署 `mcp.json` → 验证连接。
 
 ## 概述
 
@@ -248,4 +246,4 @@ MCP 客户端启动该进程并通过 stdio 与之通信。服务器连接插件
 
 ### 工具
 
-参见 [[readme_tools.rst]]（MCP 服务器暴露的工具列表）。
+参见 [`readme_tools.rst`](readme_tools.rst)（MCP 服务器暴露的工具列表）。
