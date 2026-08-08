@@ -1,13 +1,14 @@
 <div align="center">
   <h1>Blender MCP Connect</h1>
-  <p><strong>动态发现端口并通过令牌认证连接，无需手动配置端口，也无需单独下载、安装或从源码配置 MCP Server，即可安全连接运行中的 Blender 实例。</strong></p>
+  <p><strong>基于官方 Blender MCP 的安装连接优化版：免装 MCP Server、免配端口，自动、安全连接 Blender。</strong></p>
+  <p><em>An install-and-connect optimized fork of the official Blender MCP tool—no MCP Server install or port setup, with automatic, authenticated Blender connection.</em></p>
 </div>
 
 > **Unofficial community downstream** of [Blender Lab MCP](https://projects.blender.org/lab/blender_mcp).
 > Not affiliated with or endorsed by the Blender Foundation.
 > Upstream baseline: `4309a39646e644261624bfcd2bca669b343b7621`.
 
-## For AI Agents
+## 让AI帮你装
 
 If you are an AI coding agent (e.g. Claude Code, Cursor, Codex) helping a
 user set up Blender MCP Connect, read **[`llm.md`](llm.md)** first. It walks
