@@ -1,8 +1,20 @@
 name: Upstream Sync
 
-# Updates the `upstream-main` mirror branch to the latest Blender Lab MCP
-# `main`. Never merges upstream into the downstream `main` automatically:
-# that is a reviewed manual process (see UPSTREAM.md).
+# Daily (06:00 UTC) mirror of Blender Lab MCP `main` into the
+# `upstream-main` branch, then an automated merge into the downstream
+# `main`:
+#
+#   - clean merge + unit tests pass  -> merge commit (with upstream SHA)
+#                                      pushed to `main`
+#   - merge conflicts, failing tests,
+#     or a protected `main`           -> a `sync/upstream-*` PR is opened,
+#                                        assigned to the repository owner
+#                                        (GitHub notifies the assignee by
+#                                        email; the PR is the workbench for
+#                                        an agent/human to resolve)
+#
+# Conflicting merges are never force-resolved automatically. Manual
+# reviewed merges remain possible (see UPSTREAM.md).
 
 on:
   schedule:
@@ -10,30 +22,158 @@ on:
     - cron: "0 6 * * *"
   workflow_dispatch:
 
+concurrency:
+  group: upstream-sync
+  cancel-in-progress: false
+
 permissions:
   contents: write
+  pull-requests: write
+
+env:
+  UPSTREAM_URL: https://projects.blender.org/lab/blender_mcp.git
+  ASSIGNEE: ${{ github.repository_owner }}
 
 jobs:
   sync:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Fetch upstream and update mirror
+      - name: Fetch upstream
         run: |
-          git remote add upstream https://projects.blender.org/lab/blender_mcp.git
+          git remote add upstream "$UPSTREAM_URL"
           git fetch upstream main
+          git fetch origin main
+
+      - name: Update upstream-main mirror
+        run: |
           git branch -f upstream-main upstream/main
           git push --force-with-lease origin upstream-main
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Report drift on main
+      - name: Compute drift
+        id: drift
         run: |
-          git fetch origin main
-          BEHIND=$(git rev-list --count upstream/main..origin/main 2>/dev/null || echo "?")
-          AHEAD=$(git rev-list --count origin/main..upstream/main 2>/dev/null || echo "?")
-          echo "upstream commits ahead of downstream main: ${AHEAD}"
-          echo "downstream commits ahead of upstream main: ${BEHIND}"
+          AHEAD=$(git rev-list --count origin/main..upstream/main)
+          BEHIND=$(git rev-list --count upstream/main..origin/main)
+          echo "ahead=$AHEAD" >> "$GITHUB_OUTPUT"
+          echo "behind=$BEHIND" >> "$GITHUB_OUTPUT"
+          echo "Upstream commits ahead of downstream main: ${AHEAD}"
+          echo "Downstream commits ahead of upstream main: ${BEHIND}"
+
+      - name: Detect merge conflicts (merge-tree probe)
+        id: probe
+        run: |
+          if git merge-tree --write-tree origin/main upstream/main > /tmp/merge-probe.txt 2>&1; then
+            echo "conflict=false" >> "$GITHUB_OUTPUT"
+            echo "Merge of upstream/main into main is clean."
+          else
+            echo "conflict=true" >> "$GITHUB_OUTPUT"
+            echo "Merge would conflict:"; cat /tmp/merge-probe.txt
+          fi
+
+      - name: Automated merge into main
+        if: steps.drift.outputs.ahead != '0' && steps.probe.outputs.conflict == 'false'
+        run: |
+          SHA=$(git rev-parse --short upstream/main)
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git merge --no-ff upstream/main -m "Sync from Blender Lab MCP main ${SHA}
+
+          Automated upstream synchronization.
+          Upstream baseline: ${SHA}"
+
+      - uses: actions/setup-python@v5
+        if: steps.drift.outputs.ahead != '0' && steps.probe.outputs.conflict == 'false'
+        with:
+          python-version: "3.11"
+
+      - name: Run unit tests on merged tree
+        id: tests
+        if: steps.drift.outputs.ahead != '0' && steps.probe.outputs.conflict == 'false'
+        continue-on-error: true
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install "mcp[cli]>=1.2,<2" pyyaml docutils pytest
+          python -m pip install "tomli; python_version < '3.11'"
+          python -m pytest tests/test_rst_parse.py tests/test_rst_search.py \
+            tests/test_mcp_server.py tests/test_instance_registry.py \
+            tests/test_connection.py tests/test_addon_server_e2e.py \
+            tests/test_packaging.py -q
+
+      - name: Push main (fallback to PR if rejected)
+        id: push
+        if: >-
+          steps.drift.outputs.ahead != '0' &&
+          steps.probe.outputs.conflict == 'false' &&
+          steps.tests.outcome == 'success'
+        run: |
+          if git push origin main 2>/tmp/push-err.txt; then
+            echo "pushed=true" >> "$GITHUB_OUTPUT"
+            echo "Pushed merged main to origin."
+          else
+            echo "pushed=false" >> "$GITHUB_OUTPUT"
+            echo "Push rejected (protected branch?):"; cat /tmp/push-err.txt
+          fi
+
+      - name: Open sync PR for manual resolution
+        if: >-
+          steps.drift.outputs.ahead != '0' &&
+          (steps.probe.outputs.conflict == 'true' ||
+           steps.tests.outcome == 'failure' ||
+           steps.push.outputs.pushed == 'false')
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -e
+          BRANCH="sync/upstream-$(date +%Y%m%d-%H%M%S)"
+          SHA=$(git rev-parse --short upstream/main)
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git switch -c "$BRANCH"
+          if ! git merge --no-ff upstream/main -m "merge upstream ${SHA} (WIP)"; then
+            CONFLICTS=$(git diff --name-only --diff-filter=U | paste -sd ', ' - || true)
+            git add -A
+            git commit -m "WIP: merge upstream ${SHA} (conflicts marked)"
+          else
+            CONFLICTS="none"
+          fi
+          git push -u origin "$BRANCH"
+          if [ "${{ steps.probe.outputs.conflict }}" = "true" ]; then
+            REASON="The merge conflicts and was committed with conflict markers (WIP)."
+          elif [ "${{ steps.tests.outcome }}" = "failure" ]; then
+            REASON="The merge is clean but unit tests failed on the merged tree."
+          else
+            REASON="The automated push to main was rejected (branch protection?)."
+          fi
+          BODY=$(printf '%s\n\n%s\n\n%s\n%s\n%s\n%s\n' \
+            "Automated sync PR created by the upstream-sync workflow." \
+            "**Reason:** $REASON" \
+            "**Upstream:** Blender Lab MCP \`main\` @ \`$SHA\`" \
+            "**Conflicts:** ${CONFLICTS:-none}" \
+            "**Drift:** ${{ steps.drift.outputs.ahead }} ahead / ${{ steps.drift.outputs.behind }} behind" \
+            "**Resolve:** fix conflicts (or failing tests) on this branch, then merge. GitHub has emailed the assignee.")
+          gh pr create --base main --head "$BRANCH" \
+            --assignee "$ASSIGNEE" \
+            --title "sync: upstream ${SHA} needs review" \
+            --body "$BODY" || echo "PR creation failed or already exists"
+          git switch main
+          git reset --hard origin/main
+
+      - name: Summary
+        if: always()
+        run: |
+          {
+            echo "### Upstream sync result"
+            echo ""
+            echo "- Upstream ahead of main: **${{ steps.drift.outputs.ahead }}** commits"
+            echo "- Downstream ahead of upstream: **${{ steps.drift.outputs.behind }}** commits"
+            echo "- Conflict probe: **${{ steps.probe.outputs.conflict }}**"
+            echo "- Tests outcome: **${{ steps.tests.outcome }}**"
+            echo "- Push to main: **${{ steps.push.outputs.pushed }}**"
+          } >> "$GITHUB_STEP_SUMMARY"
