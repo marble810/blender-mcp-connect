@@ -1,4 +1,7 @@
-# Blender MCP Connect
+<div align="center">
+  <h1>Blender MCP Connect</h1>
+  <p><strong>动态发现端口并通过令牌认证连接，无需手动配置端口，也无需单独下载、安装或从源码配置 MCP Server，即可安全连接运行中的 Blender 实例。</strong></p>
+</div>
 
 > **Unofficial community downstream** of [Blender Lab MCP](https://projects.blender.org/lab/blender_mcp).
 > Not affiliated with or endorsed by the Blender Foundation.
