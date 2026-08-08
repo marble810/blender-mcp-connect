@@ -1,0 +1,30 @@
+{
+  "version": "v1",
+  "blocklist": [],
+  "data": [
+    {
+      "schema_version": "1.0.0",
+      "id": "blender_mcp_connect",
+      "name": "MCP Connect",
+      "tagline": "MCP server add-on for LLM interaction",
+      "version": "0.1.0",
+      "type": "add-on",
+      "maintainer": "marble810",
+      "license": [
+        "SPDX:GPL-3.0-or-later"
+      ],
+      "blender_version_min": "5.1.0",
+      "website": "https://github.com/marble810/blender-mcp-connect",
+      "permissions": {
+        "network": "Runs a local TCP socket server for MCP client communication",
+        "files": "Writes a per-instance runtime descriptor for MCP discovery"
+      },
+      "tags": [
+        "Development"
+      ],
+      "archive_url": "./blender_mcp_connect_0.1.0.zip",
+      "archive_size": 21906,
+      "archive_hash": "sha256:9db5b849681f19c2ca17aeeb4a0375ae2ee3c36f1058c6419c4848d4f8fe57fd"
+    }
+  ]
+}

@@ -1,0 +1,44 @@
+name: Deploy Extension Repository
+
+# Hosts the Blender extension repository index (extensions/) on GitHub
+# Pages. Enables the same "drag & drop with repository" install flow as
+# the official Blender Lab MCP page:
+#
+#   https://github.com/.../blender_mcp_connect_X.Y.Z.zip?repository=https://marble810.github.io/blender-mcp-connect/
+#
+# The index.json/index.html are generated with
+# `blender --command extension server-generate` and committed.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/configure-pages@v5
+
+      - name: Upload extension repository
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: extensions
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
