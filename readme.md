@@ -34,16 +34,11 @@ MCP Client  ⇐ MCP/stdio ⇒  blender-mcp-connect  ⇐ TCP socket ⇒  Blender 
 
 Blender 5.1 or newer is required.
 
-**Drag and drop** the link below into a Blender window (same as the
-official Blender Lab MCP page):
-
-- [**blender_mcp_connect_0.1.0.zip**](https://github.com/marble810/blender-mcp-connect/releases/download/connect-v0.1.0/blender_mcp_connect_0.1.0.zip)
-
-…or download the ZIP from the
-[GitHub Releases](https://github.com/marble810/blender-mcp-connect/releases)
-page and use **Edit → Preferences → Get Extensions → Install from Disk…**.
-
-Then enable the **MCP Connect** add-on.
+1. Download [**blender_mcp_connect_0.1.0.zip**](https://github.com/marble810/blender-mcp-connect/releases/download/connect-v0.1.0/blender_mcp_connect_0.1.0.zip)
+   from the [GitHub Releases](https://github.com/marble810/blender-mcp-connect/releases) page.
+2. In Blender use **Edit → Preferences → Get Extensions → Install from Disk…**
+   and select the downloaded ZIP.
+3. Enable the **MCP Connect** add-on.
 
 > The official Blender Lab MCP add-on and MCP Connect must not be enabled
 > at the same time.
