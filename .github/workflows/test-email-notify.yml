@@ -1,0 +1,63 @@
+name: Notify Email Test
+
+# Manual test of the upstream-sync email notification chain (plan A):
+# GitHub emails the assignee when a PR is opened and assigned.
+# Run via: Actions → Notify Email Test → Run workflow.
+#
+# GitHub Actions has no native "send email" step; the email is sent by
+# GitHub itself on the PR-assignment event. This workflow creates a real
+# test PR assigned to the repository owner to verify that chain end-to-end.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+env:
+  ASSIGNEE: ${{ github.repository_owner }}
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Create test branch with a marker commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git switch -c "test/notify-$(date +%Y%m%d-%H%M%S)"
+          printf 'email notification test — %s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" > NOTIFY_TEST.md
+          git add NOTIFY_TEST.md
+          git commit -m "test: email notification check"
+
+      - name: Push branch and open assigned PR
+        id: pr
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git push -u origin HEAD
+          URL=$(gh pr create --base main --head "$(git branch --show-current)" \
+            --assignee "$ASSIGNEE" \
+            --title "test: email notification check" \
+            --body "Automated **email notification test** (plan A chain).
+
+          - If you received this email, GitHub *Notifications → Email* works for PR assignment.
+          - This is the same chain the upstream-sync workflow uses for conflicting merges.
+          - Close this PR and delete the branch after confirming." | tail -1)
+          echo "url=$URL" >> "$GITHUB_OUTPUT"
+
+      - name: Summary
+        run: |
+          {
+            echo "### Email notification test"
+            echo ""
+            echo "Test PR: ${{ steps.pr.outputs.url }}"
+            echo ""
+            echo "**No email received?** Check GitHub → Settings → Notifications →"
+            echo "Email: make sure *Pull requests* and *Your teams* are enabled,"
+            echo "and the notification address is verified."
+          } >> "$GITHUB_STEP_SUMMARY"
