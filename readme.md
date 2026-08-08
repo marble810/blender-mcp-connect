@@ -8,7 +8,7 @@
 > Not affiliated with or endorsed by the Blender Foundation.
 > Upstream baseline: `4309a39646e644261624bfcd2bca669b343b7621`.
 
-## 让AI帮你装
+## Let AI Install It for You
 
 If you are an AI coding agent (e.g. Claude Code, Cursor, Codex) helping a
 user set up Blender MCP Connect, read **[`llm.md`](llm.md)** first. It walks
@@ -146,13 +146,13 @@ See [readme_tools.rst](readme_tools.rst) for the tools the MCP server exposes.
 
 ## 目录
 
-- [[#面向 AI 智能体|面向 AI 智能体]]
+- [[#让AI帮你装|让AI帮你装]]
 - [[#概述|概述]]
 - [[#安装|安装]]
 - [[#Blender 插件|Blender 插件]]
 - [[#MCP 服务器|MCP 服务器]]
 
-## 面向 AI 智能体
+## 让AI帮你装
 
 如果你是帮助用户配置 Blender MCP Connect 的 AI 编程智能体（如 Claude Code、Cursor、Codex），请先阅读 **[[llm.md]]**。它会引导你走完完整交互流程：访谈用户确认目标 Blender → 下载扩展 → 安装 → 部署 `mcp.json` → 验证连接。
 
