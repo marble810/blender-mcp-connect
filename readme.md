@@ -35,18 +35,13 @@ MCP Client  ⇐ MCP/stdio ⇒  blender-mcp-connect  ⇐ TCP socket ⇒  Blender 
 Blender 5.1 or newer is required.
 
 **Drag and drop** the link below into a Blender window (same as the
-official Blender Lab MCP page — the repository is registered
-automatically, so updates are notified):
+official Blender Lab MCP page):
 
-- [**blender_mcp_connect_0.1.0.zip**](https://github.com/marble810/blender-mcp-connect/releases/download/connect-v0.1.0/blender_mcp_connect_0.1.0.zip?repository=https%3A%2F%2Fmarble810.github.io%2Fblender-mcp-connect%2F&blender_version_min=5.1.0)
+- [**blender_mcp_connect_0.1.0.zip**](https://github.com/marble810/blender-mcp-connect/releases/download/connect-v0.1.0/blender_mcp_connect_0.1.0.zip)
 
 …or download the ZIP from the
 [GitHub Releases](https://github.com/marble810/blender-mcp-connect/releases)
 page and use **Edit → Preferences → Get Extensions → Install from Disk…**.
-
-You can also add the repository manually to receive update notifications:
-**Edit → Preferences → Get Extensions → Repositories → Add** with URL
-`https://marble810.github.io/blender-mcp-connect/`
 
 Then enable the **MCP Connect** add-on.
 

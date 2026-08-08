@@ -17,14 +17,10 @@ It requires an add-on in Blender for this to work:
 
 ### Add-on
 
-* **Drag and drop** [**blender_mcp_connect_0.1.0.zip**](https://github.com/marble810/blender-mcp-connect/releases/download/connect-v0.1.0/blender_mcp_connect_0.1.0.zip?repository=https%3A%2F%2Fmarble810.github.io%2Fblender-mcp-connect%2F&blender_version_min=5.1.0)
-  into a Blender 5.1+ window (registers the extension repository for
-  updates automatically), or download it from the
+* **Drag and drop** [**blender_mcp_connect_0.1.0.zip**](https://github.com/marble810/blender-mcp-connect/releases/download/connect-v0.1.0/blender_mcp_connect_0.1.0.zip)
+  into a Blender 5.1+ window, or download it from the
   [GitHub Releases](https://github.com/marble810/blender-mcp-connect/releases)
   page and use **Edit → Preferences → Get Extensions → Install from Disk…**.
-* To receive update notifications, add the repository
-  `https://marble810.github.io/blender-mcp-connect/` in
-  **Get Extensions → Repositories**.
 * Enable the **MCP Connect** add-on.
 
 > **Note:** this is an unofficial community downstream of Blender Lab MCP.
