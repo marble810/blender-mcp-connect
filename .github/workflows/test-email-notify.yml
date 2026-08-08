@@ -39,6 +39,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          set -o pipefail
           git push -u origin HEAD
           URL=$(gh pr create --base main --head "$(git branch --show-current)" \
             --assignee "$ASSIGNEE" \
@@ -47,7 +48,7 @@ jobs:
 
           - If you received this email, GitHub *Notifications → Email* works for PR assignment.
           - This is the same chain the upstream-sync workflow uses for conflicting merges.
-          - Close this PR and delete the branch after confirming." | tail -1)
+          - Close this PR and delete the branch after confirming.")
           echo "url=$URL" >> "$GITHUB_OUTPUT"
 
       - name: Summary

@@ -158,10 +158,11 @@ jobs:
             "**Conflicts:** ${CONFLICTS:-none}" \
             "**Drift:** ${{ steps.drift.outputs.ahead }} ahead / ${{ steps.drift.outputs.behind }} behind" \
             "**Resolve:** fix conflicts (or failing tests) on this branch, then merge. GitHub has emailed the assignee.")
-          gh pr create --base main --head "$BRANCH" \
+          URL=$(gh pr create --base main --head "$BRANCH" \
             --assignee "$ASSIGNEE" \
             --title "sync: upstream ${SHA} needs review" \
-            --body "$BODY" || echo "PR creation failed or already exists"
+            --body "$BODY")
+          echo "Created sync PR: $URL"
           git switch main
           git reset --hard origin/main
 
