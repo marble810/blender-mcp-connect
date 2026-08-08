@@ -4,6 +4,14 @@
 > Not affiliated with or endorsed by the Blender Foundation.
 > Upstream baseline: `4309a39646e644261624bfcd2bca669b343b7621`.
 
+## For AI Agents
+
+If you are an AI coding agent (e.g. Claude Code, Cursor, Codex) helping a
+user set up Blender MCP Connect, read **[`llm.md`](llm.md)** first. It walks
+you through the interactive flow: interviewing the user about their target
+Blender → downloading the Extension → installing it → deploying `mcp.json`
+→ verifying the connection.
+
 ## Overview
 
 A lightweight MCP (Model Context Protocol) server for Blender.
