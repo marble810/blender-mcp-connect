@@ -1,9 +1,16 @@
 {
   "manifest_version": "0.4",
+<<<<<<< HEAD
   "name": "Blender MCP Connect",
   "version": "0.1.0",
   "description": "Natural language interface with the Python API and documentation (unofficial downstream of Blender Lab MCP)",
   "long_description": "Blender MCP Connect offers a natural language interface with Blender's Python API, improving access to documentation, and allowing users to explore and understand complex setups.\n\nAn add-on is required to use the MCP Server, please follow the instructions in the repository README.",
+=======
+  "name": "Blender",
+  "version": "1.0.2",
+  "description": "Natural language interface with the Python API and documentation",
+  "long_description": "Blender MCP offers a natural language interface with Blender's Python API, improving access to documentation, and allowing users to explore and understand complex setups. \n\nAn add-on is required to use the MCP Server, please follow the [instructions](https://lab.blender.org/mcp-server/#addon).",
+>>>>>>> upstream/main
   "author": {
     "name": "marble810",
     "url": "https://github.com/marble810/blender-mcp-connect"
