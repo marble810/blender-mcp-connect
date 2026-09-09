@@ -125,7 +125,7 @@ requests to Blender.
 ``mcp/blmcp/tools/``
    Each tool is a single module, auto-discovered at startup.
    Modules ending in ``_toolcode`` contain code that runs inside
-   Blender (sent to the addon for execution) and are skipped during
+   Blender (sent to the add-on for execution) and are skipped during
    discovery.
 
 ``mcp/blmcp/tools_helpers/``
