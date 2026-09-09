@@ -9,6 +9,12 @@ on:
     tags:
       - "connect-v*"
 
+# A manual retry of the same release tag must wait for the original upload
+# and then skip immutable files that PyPI already has.
+concurrency:
+  group: publish-pypi-${{ github.ref }}
+  cancel-in-progress: false
+
 permissions:
   contents: read
 
@@ -45,3 +51,6 @@ jobs:
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           packages-dir: dist/
+          # PyPI files are immutable; this makes retries idempotent without
+          # allowing an existing file to be overwritten.
+          skip-existing: true

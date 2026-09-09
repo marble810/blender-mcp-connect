@@ -20,11 +20,11 @@ jobs:
 
       - name: Assemble extension ZIP
         run: |
-          export VERSION="${GITHUB_REF_NAME#connect-v}"
-          python - <<'PY'
-          import os, shutil, tempfile, zipfile, pathlib
+          VERSION="${GITHUB_REF_NAME#connect-v}"
+          python - "$VERSION" <<'PY'
+          import os, shutil, sys, tempfile, zipfile, pathlib
           src = "addon/blender_mcp_addon"
-          version = os.environ["VERSION"]
+          version = sys.argv[1]
           out = "dist_extension"
           os.makedirs(out, exist_ok=True)
           zip_path = os.path.join(out, f"blender_mcp_connect_{version}.zip")
