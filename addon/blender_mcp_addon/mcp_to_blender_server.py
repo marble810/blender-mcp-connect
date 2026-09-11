@@ -207,15 +207,12 @@ class _State:
     __slots__ = (
         "sock",
         "clients",
-<<<<<<< HEAD
         "instance_id",
         "token",
         "host",
         "port",
         "automatic",
-=======
         "pending_writes",
->>>>>>> upstream/main
     )
 
     def __init__(self) -> None:
@@ -223,7 +220,6 @@ class _State:
         self.sock: socket.socket | None = None
         # Connected clients that have not yet sent a complete request.
         self.clients: list[_Client] = []
-<<<<<<< HEAD
         # Process-lifetime instance identity (stable across restarts of the
         # bridge within one Blender process).
         self.instance_id: str | None = None
@@ -234,10 +230,8 @@ class _State:
         self.port: int = 0
         # True when the bridge was started with port ``0`` (automatic mode).
         self.automatic: bool = False
-=======
         # Responses waiting on clients to drain their receive buffers.
         self.pending_writes: list[_PendingWrite] = []
->>>>>>> upstream/main
 
 
 _state = _State()
@@ -849,14 +843,10 @@ def refresh_descriptor() -> None:
 
 def stop() -> None:
     """
-<<<<<<< HEAD
-    Close the listening socket, all client connections, and deferred responses.
+    Close the listening socket, all client connections, queued responses and deferred responses.
 
     The instance descriptor is withdrawn before the socket closes so a
     discovery scan never finds a dying bridge.
-=======
-    Close the listening socket, all client connections, queued responses and deferred responses.
->>>>>>> upstream/main
     """
     from . import deferred_tool
 
