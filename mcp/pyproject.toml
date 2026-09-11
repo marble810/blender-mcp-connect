@@ -3,16 +3,10 @@ requires = ["setuptools>=68.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
-<<<<<<< HEAD
 name = "blender-mcp-connect"
 version = "0.1.0"
 description = "MCP server for Blender with automatic local instance discovery (unofficial downstream of Blender Lab MCP)"
 readme = "README.md"
-=======
-name = "blender-mcp"
-version = "1.0.2"
-description = "MCP server for Blender"
->>>>>>> upstream/main
 requires-python = ">=3.10"
 license = { text = "GPL-3.0-or-later" }
 authors = [{ name = "marble810" }]
@@ -28,11 +22,7 @@ classifiers = [
 ]
 dependencies = [
     "docutils",
-<<<<<<< HEAD
     "mcp[cli]>=1.2,<2",
-=======
-    "mcp[cli]>=1.2.0,<2",
->>>>>>> upstream/main
     "pyyaml",
 ]
 
