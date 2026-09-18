@@ -202,6 +202,7 @@ def _register_stubs() -> None:
             "currentmodule",
             "data",
             "decorator",
+            "details",
             "exception",
             "function",
             "method",
