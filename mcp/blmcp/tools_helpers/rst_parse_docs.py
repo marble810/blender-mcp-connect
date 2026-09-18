@@ -348,6 +348,14 @@ def _rst_to_doctree(text: str, filename: str = "<input>", *, strict: bool = Fals
     parser = docutils.parsers.rst.Parser()
     doc = docutils.utils.new_document(filename, _default_settings(strict=strict))
     parser.parse(text, doc)
+    # System-message nodes are diagnostics ignored by the paragraph walker,
+    # but docutils does not reliably pickle them across Windows process
+    # boundaries (notably when their constructor signature changes). Strict
+    # parsing still raises at the configured halt level for actual parse
+    # errors; remove only retained diagnostic nodes before returning.
+    for node in list(doc.findall(docutils.nodes.system_message)):
+        if node.parent is not None:
+            node.parent.remove(node)
     return doc
 
 
