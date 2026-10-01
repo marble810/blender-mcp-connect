@@ -7,3 +7,4 @@ build/
 # Runtime / agent artifacts.
 .pi-subagents/
 dist/
+.pi/
