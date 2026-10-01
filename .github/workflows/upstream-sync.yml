@@ -13,6 +13,11 @@ name: Upstream Sync
 #                                        email; the PR is the workbench for
 #                                        an agent/human to resolve)
 #
+# Only one sync PR is kept open at a time: a run that finds an open PR for
+# the same upstream SHA skips PR creation entirely, and stale PRs whose
+# branch still ends in the bot's WIP commit are closed as superseded.
+# Branches someone already pushed fixes to are never closed automatically.
+#
 # Conflicting merges are never force-resolved automatically. Manual
 # reviewed merges remain possible (see UPSTREAM.md).
 
@@ -121,9 +126,67 @@ jobs:
             echo "Push rejected (protected branch?):"; cat /tmp/push-err.txt
           fi
 
+      - name: Reconcile existing sync PRs
+        id: reconcile
+        if: steps.drift.outputs.ahead != '0'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          SHA=$(git rev-parse --short upstream/main)
+          # 所有开着的同步 PR，编号从大到小（最新在前）
+          gh pr list --state open --base main --limit 50 --json number,headRefName,title \
+            --jq '.[] | select(.headRefName | startswith("sync/upstream-")) | [.number, .title] | @tsv' \
+            | sort -k1,1nr > /tmp/sync-prs.tsv || true
+          echo "open sync PRs:"; cat /tmp/sync-prs.tsv || true
+
+          # 分支头提交还是 bot 的 WIP → 没人动过，关掉不丢工作
+          untouched() {
+            local email
+            email=$(gh pr view "$1" --json commits \
+              --jq '.commits[-1].authors[0].email' 2>/dev/null || echo "")
+            [ "$email" = "41898282+github-actions[bot]@users.noreply.github.com" ]
+          }
+          close_if_untouched() {
+            if untouched "$1"; then
+              gh pr close "$1" --comment "$2" >/dev/null && echo "closed #$1"
+            else
+              echo "::warning::#$1 的分支上有非 bot 提交，保留不关（可能已经有人在解）"
+            fi
+          }
+
+          if [ "${{ steps.push.outputs.pushed }}" = "true" ]; then
+            # main 已经吸收上游：残留的同步 PR 全部作废
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            while IFS=$'\t' read -r n _title; do
+              [ -n "${n:-}" ] && close_if_untouched "$n" "Superseded: upstream ${SHA} is already merged into main."
+            done < /tmp/sync-prs.tsv || true
+            exit 0
+          fi
+
+          SAME=$(awk -F'\t' -v sha="$SHA" '$2 ~ ("upstream " sha "([^0-9a-f]|$)") {print $1}' /tmp/sync-prs.tsv | head -1)
+          if [ -n "${SAME:-}" ]; then
+            # 同一个上游 SHA 已经有开放 PR（上游这两天没动）：不再开新的，也不建新分支
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "existing_pr=$SAME" >> "$GITHUB_OUTPUT"
+            echo "同上游 SHA 的开放 PR #$SAME 已存在，本次不再开 PR。"
+            while IFS=$'\t' read -r n _title; do
+              [ -z "${n:-}" ] && continue
+              [ "$n" = "$SAME" ] && continue
+              case "$_title" in *"upstream $SHA"*) close_if_untouched "$n" "Superseded by #$SAME (same upstream SHA ${SHA}).";; esac
+            done < /tmp/sync-prs.tsv || true
+          else
+            # 上游 SHA 变了：旧的同步 PR 作废（同一时间只留一个）
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+            while IFS=$'\t' read -r n _title; do
+              [ -n "${n:-}" ] && close_if_untouched "$n" "Superseded by a newer upstream sync (${SHA})."
+            done < /tmp/sync-prs.tsv || true
+          fi
+
       - name: Open sync PR for manual resolution
         if: >-
           steps.drift.outputs.ahead != '0' &&
+          steps.reconcile.outputs.skip == 'false' &&
           (steps.probe.outputs.conflict == 'true' ||
            steps.tests.outcome == 'failure' ||
            steps.push.outputs.pushed == 'false')
